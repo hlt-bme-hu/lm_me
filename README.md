@@ -23,3 +23,17 @@
 * See `babble.py`
 * This script loads a model and ends your sentences. If you type an interrupted sentence (or an empty one) then the script generates the end of it.
 * You have to give an end-of-sentence symbol to know where to stop.
+
+## White paper
+http://clara.nytud.hu/~kk120/borbely/borbely.pdf
+
+    @article{
+      Borbely:2017,
+      author = {Gábor Borbély},
+      title = {Language modeling with matrix embeddings},
+      journal = {K + K = 120},
+      publisher = {MTA Nyelvtudományi Intézet (Research Institute for Linguistics, Hungarian Academy of Sciences)},
+      year = {2017},
+      editor = {Beáta Gyuris, Katalin Mády and Gábor Recski},
+      note = {Papers dedicated to László Kálmán and András Kornai on the occasion of their 60th birthdays}
+    }
