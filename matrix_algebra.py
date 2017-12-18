@@ -10,7 +10,7 @@ from collections import defaultdict
 from itertools import chain
 import theano
 import theano.tensor as T
-from auxiliary import forward
+from auxiliary import *
 
 class AlgebraException(Exception):
     pass
