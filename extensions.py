@@ -69,3 +69,10 @@ class AdagradOptimizer(Optimizer):
     def init(self, *initvals):
         super().init(*initvals)
         self.grad_sqs = tuple(map(lambda x: theano.shared(self.eta1*numpy.ones_like(x)), initvals))
+
+def Hessian(objective, *Vars, **kwargs):
+     return T.concatenate([
+                T.concatenate([
+                    T.jacobian(T.grad(objective, var1, disconnected_inputs='ignore'), var2, disconnected_inputs='ignore') for var2 in Vars],
+                axis=1) for var1 in Vars],
+            axis=0)
