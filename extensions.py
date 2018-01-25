@@ -11,7 +11,8 @@ class Optimizer(object):
         self.minimize = minimize
         self.objective = objective
 
-        self.constraints = {var: var if var not in constraints else constraints[var] for var in vars}
+        self.constraints = {var: var if var not in constraints else \
+                                constraints[var] for var in vars}
 
     def updates(self):
         update_list = []
@@ -26,17 +27,23 @@ class Optimizer(object):
     def init(self, *initvals):
         if len(initvals) != len(self.sym_vars):
             raise ValueError("Length of symbolic variables ({0}) is not equal to "
-                              "length of initializer list ({1})!".format(len(initvals), len(self.sym_vars)))
+                              "length of initializer list ({1})!".format(
+                                len(initvals), len(self.sym_vars))
+                            )
         self.shr_vars = tuple(map(theano.shared, initvals))
     def givens(self):
         return tuple(zip(self.sym_vars, self.shr_vars))
     def get_vars(self):
-        new_vals = [self.constraints[var] for var in self.sym_vars]
+        updates = self.renormalize_updates()
         return theano.function([],
-                            new_vals,
+                            [update[1] for update in updates],
                             givens=self.givens(),
-                            updates=list(zip(self.shr_vars, new_vals))
-                            )
+                            updates=updates)
+
+    def renormalize_updates(self):
+        new_vals = [self.constraints[var] for var in self.sym_vars]
+        return list(zip(self.shr_vars, new_vals))
+
     @staticmethod
     def numpy_cast(x):
         return eval("numpy." + theano.config.floatX)(x)
@@ -73,6 +80,12 @@ class AdagradOptimizer(Optimizer):
 def Hessian(objective, *Vars, **kwargs):
      return T.concatenate([
                 T.concatenate([
-                    T.jacobian(T.grad(objective, var1, disconnected_inputs='ignore'), var2, disconnected_inputs='ignore') for var2 in Vars],
+                    T.jacobian(
+                        T.grad(objective, var1, disconnected_inputs='ignore').reshape(
+                            (T.prod(var1.shape),)
+                            ),
+                        var2, disconnected_inputs='ignore').reshape(
+                            (T.prod(var1.shape), T.prod(var2.shape))
+                            ) for var2 in Vars],
                 axis=1) for var1 in Vars],
             axis=0)
