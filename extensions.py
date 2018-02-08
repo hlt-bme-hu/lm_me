@@ -24,13 +24,20 @@ class Optimizer(object):
         return update_list
     def grad_steps(self):
         pass
-    def init(self, *initvals):
+    def init(self, *initvals, **kwargs):
         if len(initvals) != len(self.sym_vars):
             raise ValueError("Length of symbolic variables ({0}) is not equal to "
                               "length of initializer list ({1})!".format(
                                 len(initvals), len(self.sym_vars))
                             )
-        self.shr_vars = tuple(map(theano.shared, initvals))
+        if hasattr(self, "shr_vars"):
+            if len(initvals) != len(self.shr_vars):
+                raise ValueError("initializer and already initialized shared variables"
+                        " differ in length!")
+            for i in range(len(initvals)):
+                self.shr_vars[i].set_value(initvals[i])
+        else:
+            self.shr_vars = tuple(map(theano.shared, initvals))
     def givens(self):
         return tuple(zip(self.sym_vars, self.shr_vars))
     def get_vars(self):
@@ -41,6 +48,9 @@ class Optimizer(object):
                             updates=updates)
 
     def renormalize_updates(self):
+        if not hasattr(self, "shr_vars"):
+            raise AttributeError("object has no attribute 'shr_vars'! "
+                        "Maybe you forgot to initialize the " +  type(self).__name__)
         new_vals = [self.constraints[var] for var in self.sym_vars]
         return list(zip(self.shr_vars, new_vals))
 
@@ -73,10 +83,11 @@ class AdagradOptimizer(Optimizer):
     def grad_steps(self):
         return tuple(self.grads[i]/T.sqrt(self.grad_sqs[i]) for i in range(len(self.sym_vars)))
 
-    def init(self, *initvals):
-        super().init(*initvals)
-        self.grad_sqs = tuple(map(lambda x: theano.shared(self.eta1*numpy.ones_like(x)), initvals))
-
+    def init(self, *initvals, keep_sq=False, **kwargs):
+        super().init(*initvals, **kwargs)
+        if not hasattr(self, "grad_sqs") or not keep_sq:
+            self.grad_sqs = tuple(map(lambda x: theano.shared(self.eta1*numpy.ones_like(x)), initvals))
+        
 def Hessian(objective, *Vars, **kwargs):
      return T.concatenate([
                 T.concatenate([
